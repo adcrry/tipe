@@ -69,10 +69,10 @@ def R__(obj, theta, rho):
         tot += val(obj, i,j)
     return int(tot);
 
-def sinogram_bis(obj):
+def sinogram(obj):
     projections = []
     M = 180
-    for k in range(0, xlen):
+    for k in range(0, math.ceil(1.4*xlen)):
         projections.append([])
         for m in range(0, M):
             projections[k].append(R__(obj, m * math.pi / M, k))
@@ -82,7 +82,7 @@ def sinogram_bis(obj):
     #plt.imshow(np.vstack(projections))
     #plt.show()
     
-#Fonction trouvée dans un repo github
+#Fonction trouvée dans un repo github qui fonctionne
 def sinogram_marche(image, steps):        
     projections = []
     dTheta = -180.0 / steps 
