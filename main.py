@@ -43,7 +43,7 @@ def val(img, i,j):
 
 #Change la couleur d'un pixel s'il est dans [0, xlen-1] * [0, ylen-1]
 def colorize(img, i,j, c):
-    if i >= 2 and i < xlen - 2 and j >= 2 and j < ylen - 2 :
+    if i >= 0 and i < xlen  and j >= 0 and j < ylen  :
         img[j,i] = c
    
 
@@ -69,28 +69,6 @@ def R__(obj, theta, rho):
         tot += val(obj, i,j)
     return int(tot);
 
-
-def sample(theta):
-    r = []
-    for k in range(0, xlen - 1):
-        r.append(R__(theta, k))
-        print("sample:", k)
-    return r;
-
-def _radon():
-    M = 50
-    v = []
-    for n in range(0, xlen):
-        v.append([])
-        print(n)
-        for m in range(0, M-1):
-            v[n].append(R__(n, m*math.pi/M))
-            
-    return v;
-    
-def rescale(i):
-    return 100*i/255
-
 def sinogram_bis(obj):
     projections = []
     M = 180
@@ -103,6 +81,8 @@ def sinogram_bis(obj):
     plt.show()
     #plt.imshow(np.vstack(projections))
     #plt.show()
+    
+#Fonction trouvée dans un repo github
 def sinogram_marche(image, steps):        
     projections = []
     dTheta = -180.0 / steps 
@@ -119,14 +99,6 @@ def sinogram_marche(image, steps):
     plt.show()
     imageio.imwrite("fig10.png", final)
     return final
-
-def ___sinogram():
-    theta = np.linspace(0., 180., 500, endpoint=False)
-    sinogram = radon(obj, theta=theta)
-    return sinogram()
-    #recimg = iradon(sinogram, theta=theta)
-    #plt.imshow(recimg)
-    #plt.show()
 
 def reverse(u):
     freq = math.pi * np.fft.fftfreq(xlen, xlen/2)
