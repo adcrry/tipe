@@ -35,8 +35,8 @@ img_gris = gris(obj)
 
 #Retourne la valeur de gris dans une case, si la case est en dehors de l'image le résultat est nul
 def val(img, i,j):
-    if i >= 0 and i < xlen and j >= 0 and j < ylen:
-        return img[i,j];
+    if i >= 0 and i < ylen and j >= 0 and j < xlen:
+        return img[-j,i];
     else:
         return 0;
 
@@ -44,7 +44,7 @@ def val(img, i,j):
 #Change la couleur d'un pixel s'il est dans [0, xlen-1] * [0, ylen-1]
 def colorize(img, i,j, c):
     if i >= 0 and i < xlen  and j >= 0 and j < ylen  :
-        img[j,i] = c
+        img[-j,i] = c
    
 
 k = round(math.sqrt(2),3)
@@ -53,25 +53,27 @@ k = round(math.sqrt(2),3)
 def v_proj(img, theta, rho):
     tot = 0 
     N = 0
-    for i in range(int(-xlen), int(xlen)):
-        i,j = round(rho*math.cos(theta) - i*math.sin(theta)),round(rho*math.sin(theta) + i*math.cos(theta))
+    for k in range(-int(1.4*xlen), int(1.4*xlen)):
+        i,j = round(rho*math.cos(theta) - k*math.sin(theta)),round(rho*math.sin(theta) + k*math.cos(theta))
+        print(k, i,j)
         colorize(img, i, j, 255)
+
     plt.figure(dpi=300)
     plt.imshow(img)
     plt.show()
-
+    
 #Effectue la somme des densités sur une ligne de projection (opération de projection)
 def R__(obj, theta, rho):
     tot = 0 
     N = 1
-    for i in range(int(-xlen), int(xlen)):
-        i,j = round(rho*math.cos(theta) - i*math.sin(theta)),round(rho*math.sin(theta) + i*math.cos(theta))
+    for k in range(int(-1.4*xlen), int(1.4*xlen)):
+        i,j = round(rho*math.cos(theta) - k*math.sin(theta)),round(rho*math.sin(theta) + k*math.cos(theta))
         tot += val(obj, i,j)
     return int(tot);
 
 def sinogram(obj):
     projections = []
-    M = 180
+    M = 50
     for k in range(0, math.ceil(1.4*xlen)):
         projections.append([])
         for m in range(0, M):
@@ -106,4 +108,3 @@ def reverse(u):
                     
     return np.fft.ifft(np.fft.fft(u, axis = 0), axis = 0)
 #v_proj(0, 1000)
-    
