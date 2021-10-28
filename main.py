@@ -14,7 +14,7 @@ import math as math;
 import numpy as np
 import imageio 
 #obj = io.imread('disque.jpg')
-obj = imageio.imread("image-reduite.png")
+obj = imageio.imread("original.png")
 xlen = len(obj)
 ylen = len(obj[0])
     
@@ -67,23 +67,24 @@ def R__(obj, theta, rho):
     tot = 0 
     N = 1
     for k in range(int(-1.4*xlen), int(1.4*xlen)):
-        i,j = round(rho*math.cos(theta) - k*math.sin(theta)),round(rho*math.sin(theta) + k*math.cos(theta))
+        i,j = round(rho*math.cos(theta) - k*math.sin(theta) + xlen/2),round(rho*math.sin(theta) + k*math.cos(theta)+xlen/2)
         tot += val(obj, i,j)
     return int(tot);
 
 def sinogram(obj):
     projections = []
-    M = 50
-    for k in range(0, math.ceil(1.4*xlen)):
+    M = 180
+    for k in range(-int(xlen/2), int(xlen/2)+1):
+        print(k)
         projections.append([])
         for m in range(0, M):
-            projections[k].append(R__(obj, m * math.pi / M, k))
+            projections[int(xlen/2)+k].append(R__(obj, m * math.pi / M, k))
     
     plt.imshow(projections)
     plt.show()
     #plt.imshow(np.vstack(projections))
     #plt.show()
-    
+
 #Fonction trouvée dans un repo github qui fonctionne
 def sinogram_marche(image, steps):        
     projections = []
