@@ -74,7 +74,7 @@ def R__(obj, theta, rho):
 def sinogram(obj):
     projections = []
     M = 180
-    for k in range(-int(xlen/2), int(xlen/2)+1):
+    for k in range(-int(xlen/2), int(xlen/2)):
         print(k)
         projections.append([])
         for m in range(0, M):
@@ -84,28 +84,39 @@ def sinogram(obj):
     plt.show()
     #plt.imshow(np.vstack(projections))
     #plt.show()
-
-#Fonction trouvée dans un repo github qui fonctionne
-def sinogram_marche(image, steps):        
-    projections = []
-    dTheta = -180.0 / steps 
+    return projections
     
-    for i in range(steps):
-        plt.imshow(rotate(image, i*dTheta))
-        projections.append(rotate(image, i*dTheta).sum(axis=0))
+def value(tab, i, j):
+    if i >= 0 and i < np.shape(tab)[0] and j >= 0 and j < np.shape(tab)[1]:
+        return tab[i,j];
+    else:
+        return 0;
 
-    
-    final = np.vstack(projections)
-    plt.imshow(projections)
-    plt.show()
-    plt.imshow(final)
-    plt.show()
-    imageio.imwrite("fig10.png", final)
-    return final
-
+#Fonction d'inversion de la transformée de radon par passage par l'espace de fourier
 def reverse(u):
-    freq = math.pi * np.fft.fftfreq(xlen, xlen/2)
-   # Q = np.fft.ifft(np.fft.fft(u))
-                    
-    return np.fft.ifft(np.fft.fft(u, axis = 0), axis = 0)
+    shape = np.shape(u)
+    N = shape[0]
+    M = shape[1]
+    #on passe l'image dans l'espace de Fourrier
+    freq = math.pi * np.fft.fftfreq(np.shape(u)[0], int(np.shape(u)[0]/2))
+    Freq = []
+    #lignes
+    for i in range(0, shape[0]):
+        #colonnes
+        Freq.append([])
+        for j in range(0, shape[1]):
+            Freq[i].append(freq[i])
+    Q = np.fft.ifft(Freq * np.fft.fft(u, axis =  0), axis = 0)
+    print(np.shape(Q))
+    #on repasse dans le domaine des vivants
+    img = np.zeros((N, N))
+    for i in range(N):
+        for j in range(N):
+            tot = 0
+            for m in (0, M-1):
+                k,l = int(N/2 + (i-N/2)*math.cos(m*math.pi/M) + (j-N/2)*math.sin(math.pi*m/M)), m
+                tot += value(Q,k, l)
+            img[-i, j] = math.pi*tot/M
+            tot = 0
+    return img
 #v_proj(0, 1000)
