@@ -36,7 +36,7 @@ img_gris = gris(obj)
 #Retourne la valeur de gris dans une case, si la case est en dehors de l'image le résultat est nul
 def val(img, i,j):
     if i >= 0 and i < ylen and j >= 0 and j < xlen:
-        return img[-j,i];
+        return img[j,i];
     else:
         return 0;
 
@@ -72,19 +72,17 @@ def R__(obj, theta, rho):
     return int(tot);
 
 def sinogram(obj):
-    projections = []
     M = 180
+    projections = np.zeros((M, obj.shape[0]))
     for k in range(-int(xlen/2), int(xlen/2)):
-        print(k)
-        projections.append([])
         for m in range(0, M):
-            projections[int(xlen/2)+k].append(R__(obj, m * math.pi / M, k))
+            projections[m, -int(xlen/2)+k] = (R__(obj, m * math.pi / M, k))
     
     plt.imshow(projections)
     plt.show()
     #plt.imshow(np.vstack(projections))
     #plt.show()
-    return projections
+    return rotate(projections,-180)
     
 def value(tab, i, j):
     if i >= 0 and i < np.shape(tab)[0] and j >= 0 and j < np.shape(tab)[1]:
@@ -92,31 +90,40 @@ def value(tab, i, j):
     else:
         return 0;
 
-#Fonction d'inversion de la transformée de radon par passage par l'espace de fourier
-def reverse(u):
-    shape = np.shape(u)
-    N = shape[0]
-    M = shape[1]
-    #on passe l'image dans l'espace de Fourrier
-    freq = math.pi * np.fft.fftfreq(np.shape(u)[0], int(np.shape(u)[0]/2))
-    Freq = []
-    #lignes
-    for i in range(0, shape[0]):
-        #colonnes
-        Freq.append([])
-        for j in range(0, shape[1]):
-            Freq[i].append(freq[i])
-    Q = np.fft.ifft(Freq * np.fft.fft(u, axis =  0), axis = 0)
-    print(np.shape(Q))
-    #on repasse dans le domaine des vivants
-    img = np.zeros((N, N))
-    for i in range(N):
-        for j in range(N):
-            tot = 0
-            for m in (0, M-1):
-                k,l = int(N/2 + (i-N/2)*math.cos(m*math.pi/M) + (j-N/2)*math.sin(math.pi*m/M)), m
-                tot += value(Q,k, l)
-            img[-i, j] = math.pi*tot/M
-            tot = 0
-    return img
-#v_proj(0, 1000)
+
+def reverse(im):
+    xlen = im.shape[0]
+    ylen = im.shape[1]
+    resultat = np.zeros((ylen, ylen))
+    dTheta = 180.0 / xlen
+    for i in range(xlen):
+        temp = np.tile(im[i], (ylen, 1))
+        temp = rotate(temp, dTheta * i)
+        resultat += temp
+    return resultat
+
+def Lambda(N, M):
+    t = np.zeros((N, M))
+    for k in range(N):
+        t[k, :] = abs(math.pi * np.fft.fftfreq(M, 2 / N))
+    return t
+
+def Q(im, N, M):
+    A = Lambda(N, M)  
+    B = np.fft.fft(im, axis=1)  
+    C = A * B  
+    return np.fft.ifft(C, axis=1)  
+
+
+def reverse2(im):
+    xlen = im.shape[0]
+    ylen = im.shape[1]
+    im = Q(im, xlen, ylen).real  
+    resultat = np.zeros((ylen, ylen))
+    dTheta = 180.0 / xlen
+    im = rotate(im, -90)
+    for i in range(xlen):
+        temp = np.tile(im[i], (ylen, 1))
+        temp = rotate(temp, dTheta * i)
+        resultat += temp
+    return resultat
