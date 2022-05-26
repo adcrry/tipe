@@ -14,9 +14,11 @@ import math as math;
 import numpy as np
 import imageio 
 import scipy.signal
+import time
 
 #obj = io.imread('disque.jpg')
-obj = imageio.imread("radio_filtree.png")
+#obj = imageio.imread("radio_filtree.png")
+obj = imageio.imread("main2.png")
 xlen = len(obj)
 ylen = len(obj[0])
     
@@ -33,7 +35,7 @@ def gris(img):
     return result;
 
 #Image sous forme de niveau de gris sur laquel on peut maintenant travailler comme s'il c'était une "densité"
-img_gris = gris(obj)
+#img_gris = gris(obj)
 
 #Retourne la valeur de gris dans une case, si la case est en dehors de l'image le résultat est nul
 def val(img, i,j):
@@ -74,7 +76,7 @@ def R__(obj, theta, rho):
     return int(tot);
 
 def sinogram(obj):
-    M = 180
+    M = 20
     projections = np.zeros((M, obj.shape[0]))
     for k in range(-int(xlen/2), int(xlen/2)):
         print(k)
@@ -103,6 +105,22 @@ def value(tab, i, j):
     else:
         return 0;
 
+def retroprojection_manuelle(sino):
+    n = sino.shape[0]
+    m = sino.shape[1]
+    M = 20
+    reconst = np.zeros((m,m))
+    for i in range(n):
+        print(i)
+        for j in range(m):
+            theta = j * math.pi / M
+            for k in range(int(-1.4*xlen), int(1.4*xlen)):
+                a,o = round(i*math.cos(theta) - k*math.sin(theta) + m/2),round(i*math.sin(theta) + k*math.cos(theta)+m/2)
+                if a >= 0 and o >= 0 and a < n and o < n:
+                    reconst[a,o] += sino[i,j]
+                else:
+                    continue
+    return reconst
 
 def retroprojection(im):
     xlen = im.shape[0]
@@ -182,17 +200,68 @@ def applyg(img):
 def porte(img):
     n,m = np.shape(img)[0], np.shape(img)[1]
     result = np.zeros((n,m))
+    #seuil = img[0,0]
+    seuil = 100
     for i in range(n):
         for j in range(m):
-            if img[i,j] < 100:
+            if img[i,j] < seuil + 10:
                 result[i,j] = 0
             else:
                 result[i,j] = img[i,j]
     return result;
 
+
+####################################
+#Modification des contrastes par interpolation polynomiale
+####################################
+
+def baseLagrange(X,k):
+    n=len(X)
+    P=np.poly1d(X[0:k]+X[k+1:n],True)
+    P=np.poly1d([1./P(X[k])])*P
+    return(P)
+
+def Lagrange(X,Y):
+    n=len(X)
+    L=np.poly1d([])
+    for k in range(n):
+        L=L+Y[k]*baseLagrange(X,k)
+    return(L)
+
+X=[0,60,125,185,255]
+Y=[0,80,150,220,255]
+P=Lagrange(X,Y)
+x=np.linspace(0,255,100)
+y=P(x)
+
+plt.plot(x,y)
+
+def applyLag(img):
+    n,m = np.shape(img)[0], np.shape(img)[1]
+    result = np.zeros((n,m))
+    for i in range(n):
+        for j in range(m):
+            result[i,j] = P(img[i,j])
+            
+    return result;
+
+##########################
+#On teste ce qui se passe avec du bruit gaussien
+##########################
+
+def bruite(img):
+    bruit = np.random.normal(1, 0.05, size = (img.shape[0], img.shape[1]))
+    return img*bruit
+
+
 ###############################
 #Utilitaire Plot
 ###############################
+def drawColorbar(im):
+    plt.imshow(im)
+    plt.colorbar()
+    plt.show()
+
 
 def drawSino(im):
     plt.imshow(im)
@@ -203,3 +272,57 @@ def drawSino(im):
     plt.figure(1, figsize=(354/27,252/27), dpi=27)
     plt.savefig("fig_test.png")
     plt.show()
+
+L = [20,50,80,180,360]
+def generateSinograms(obj, name):
+    #Génére les sinogrammes en 20,50,80,180,360 projections et les enregistre
+    #et donne les temps de calcul
+    for s in L:
+        print(str(s) + " projections")
+        l = time.time()
+        sino = sinogram_(obj, s)
+        print(time.time() - l)
+        imageio.imsave(name + "_sino_" + str(s) + ".png", sino)
+        plt.imshow(sino)
+        plt.savefig(name + "_sino_plot_" + str(s) + ".png", dpi = 300)
+
+def generateRetro(name):  
+    for s in L:
+        print("Sino " + str(s))
+        sino = imageio.imread(name + "_sino_" + str(s) + ".png")
+        l = time.time()
+        retro = retroprojection(sino)
+        print(time.time() - l)
+        imageio.imsave(name + "_retro_" + str(s) + ".png", retro)
+        plt.imshow(retro)
+        plt.savefig(name + "_retro_plot_" + str(s) + ".png", dpi = 300)
+
+
+def generateReverse(name):
+    for s in L:
+        print("Sino " + str(s))
+        sino = imageio.imread(name + "_sino_" + str(s) + ".png")
+        l = time.time()
+        retro = reverse2(sino)
+        print(time.time() - l)
+        imageio.imsave(name + "_rev_" + str(s) + ".png", retro)
+        plt.imshow(retro)
+        plt.savefig(name + "_rev_plot_" + str(s) + ".png", dpi = 300)
+
+def generatePorte(name):
+    for s in L:
+        img = imageio.imread(name + "_rev_" + str(s) + ".png")
+        p = porte(img)
+        imageio.imsave(name + "_porte_" + str(s) + ".png", p)
+        plt.imshow(p)
+        plt.savefig(name + "_porte_plot_" + str(s) + ".png", dpi = 300)
+
+
+def plotFts(X, Y):
+    plt.plot(X,Y)  
+    plt.xlabel("Nombre de projections")
+    plt.ylabel("Temps (s)")
+    plt.savefig("temps.png", dpi=300)
+    
+plt.imshow(obj)
+plt.savefig("main_plot.png", dpi=300)
